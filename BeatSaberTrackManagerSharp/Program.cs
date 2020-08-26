@@ -87,7 +87,6 @@ namespace BeatSaberTrackManagerSharp
         static void Main()
         {
 
-            //Why in the name of holy fuck do I have to do this to call a function?
             Form1 a = new Form1();
             a.fill_listbox();
 
