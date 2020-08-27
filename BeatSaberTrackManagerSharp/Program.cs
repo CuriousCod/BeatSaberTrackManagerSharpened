@@ -500,15 +500,15 @@ namespace BeatSaberTrackManagerSharp
                         }
                     }
                 }
-                
+
             }
             catch (System.ArgumentException)
-                {
+            {
                 listBox1.Items.Clear();
                 comboBox1.Enabled = false;
-                }
+            }
 
-        }   
+        }
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {
@@ -537,11 +537,11 @@ namespace BeatSaberTrackManagerSharp
 
         private void toolStripMenuItem4_Click(object sender, EventArgs e)
         {
- 
+
             //Replaced the horrible FolderBrowser with CommonOpenFile
             CommonOpenFileDialog openBSFolder = new CommonOpenFileDialog();
             openBSFolder.InitialDirectory = textBox3.Text;
-            openBSFolder.IsFolderPicker = true;            
+            openBSFolder.IsFolderPicker = true;
             if (openBSFolder.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 textBox3.Text = openBSFolder.FileName;
@@ -576,7 +576,7 @@ namespace BeatSaberTrackManagerSharp
             //NYoutubeDL is confusing
             System.Diagnostics.Process dlVideo = new System.Diagnostics.Process();
             dlVideo.StartInfo.FileName = @"F:\Games\Beat Saber 1.8.0\Youtube-dl\youtube-dl.exe";
-            dlVideo.StartInfo.Arguments = "ytsearch:\"" + textBox1.Text  +"\" -o \"J:/\" --skip-download --write-info-json ";
+            dlVideo.StartInfo.Arguments = "ytsearch:\"" + textBox1.Text + "\" -o \"J:/\" --skip-download --write-info-json ";
             //dlVideo.StartInfo.RedirectStandardOutput = true;
             //dlVideo.StartInfo.UseShellExecute = false;
             dlVideo.Start();
@@ -613,7 +613,7 @@ namespace BeatSaberTrackManagerSharp
 
             //TODO add json file deletion
 
-            }
+        }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
