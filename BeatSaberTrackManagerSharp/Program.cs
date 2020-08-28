@@ -10,7 +10,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
 using Microsoft.WindowsAPICodePack.Dialogs;
-
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using Microsoft.WindowsAPICodePack.Shell;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
+using MediaToolkit.Model;
+using MediaToolkit;
+using System.Text.RegularExpressions;
 
 namespace BeatSaberTrackManagerSharp
 {
@@ -374,7 +381,57 @@ namespace BeatSaberTrackManagerSharp
             pictureBox2.Image = null;
         }
 
+        public dynamic fetch_video_json(string track_path)
+        {
+            var video_json = "";
+            JObject o2 = null;
 
+            if (File.Exists(track_path + @"\video.json"))
+            {
+                using (StreamReader file = File.OpenText(track_path + @"\video.json"))
+                using (JsonTextReader reader = new JsonTextReader(file))
+                {
+                    o2 = (JObject)JToken.ReadFrom(reader);
+
+                    video_json = o2.ToString();
+                    Console.WriteLine(video_json);
+                }
+
+                if (o2["videos"] == null)
+                {
+                    string newJson = "{activeVideo: '0', videos: [" + video_json + "]}";
+                    o2 = JObject.Parse(newJson);
+                    Console.WriteLine(o2.ToString());
+                }
+
+                int av = (int)o2["activeVideo"];
+
+                if (o2["videos"][av]["videopath"] != null)
+                {
+                    o2["videos"][av]["videoPath"] = o2["videos"][av]["videopath"];
+                    o2["videos"][av]["videopath"].Remove();
+                }
+                //TODO Replace bad symbols here
+
+                video_json = o2.ToString();
+                Console.WriteLine(video_json);
+
+                //Serialize json. Conversion process adds unnecessary stuff to the json, gotta replace that.
+                var serialize = JsonConvert.SerializeObject(video_json, Formatting.None).Replace(@"\r\n", "").Replace("\\", "");
+                serialize = Regex.Replace(serialize, @"\s+", " ");
+                Console.WriteLine(serialize);
+                File.WriteAllText(track_path + @"\video.json", video_json);
+
+                return video_json;
+
+
+            }
+            else
+            {
+                return false;
+            }
+
+        }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
@@ -384,48 +441,48 @@ namespace BeatSaberTrackManagerSharp
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             clear_info();
-            try
-            {
-                using (StreamReader file = File.OpenText(textBox3.Text + @"\" + listBox1.Text + @"\video.json"))
-                using (JsonTextReader reader = new JsonTextReader(file))
-                {
-                    JObject o2 = (JObject)JToken.ReadFrom(reader);
-                    //IList<string> keys = o2.Properties().Select(p => p.Name).ToList();
+            var video_json = fetch_video_json(textBox3.Text + @"\" + listBox1.Text);
 
-                    var video_json = o2.ToString();
-                    //var fdate = JObject.Parse(track_json)["title"];
+
+            if (video_json == string)
+            {
+                try
+                {
+                    JObject o2 = JObject.Parse(video_json);
 
                     //textBox2.Text = video_json;
                     label1.Text = (string)o2["videos"][0]["title"];
                     label2.Text = (string)o2["videos"][0]["duration"];
                     var thumbnail_url = (string)o2["videos"][0]["thumbnailURL"];
-                    thumbnail_url = (string)o2["videos"][0]["thumbnailURL"];
-                    thumbnail_url = thumbnail_url.Substring(0, thumbnail_url.LastIndexOf("?"));
+                    thumbnail_url = thumbnail_url.Replace("_webp", "").Replace("webp", "jpg");
+                    thumbnail_url = thumbnail_url.Substring(0, thumbnail_url.LastIndexOf("jpg") + 3);
                     pictureBox1.Load(thumbnail_url);
                 }
-            }
-            catch (FileNotFoundException ex)
-            {
-                Logger.Error(ex);
-            }
+                catch (FileNotFoundException ex)
+                {
+                    Logger.Error(ex);
+                }
 
-            catch (ArgumentException ex)
-            {
-                //TODO Figure out a way to display webp (21c2)
-                Logger.Error(ex, listBox1.Text + " - Thumbnail format not supported -> webp? ");
-            }
+                catch (ArgumentException ex)
+                {
+                    //Figure out a way to display webp (21c2)
+                    //Actually don't, just use the jpg image instead
+                    //C# and webp don't blend well
+                    //TODO Get rid of this part
+                    Logger.Error(ex, listBox1.Text + " - Thumbnail format not supported -> webp? ");
+                }
 
-            catch (DirectoryNotFoundException ex)
-            {
-                Logger.Error(ex, textBox3.Text + " - Not the BS directory ");
-            }
+                catch (DirectoryNotFoundException ex)
+                {
+                    Logger.Error(ex, textBox3.Text + " - Not the BS directory ");
+                }
 
-            catch (System.Net.WebException ex)
-            {
-                pictureBox1.Load("https://s.ytimg.com/yts/img/no_thumbnail-vfl4t3-4R.jpg");
-                Logger.Error(ex, listBox1.Text + " - No thumbnail found, using default thumbnail. ");
+                catch (System.Net.WebException ex)
+                {
+                    pictureBox1.Load("https://s.ytimg.com/yts/img/no_thumbnail-vfl4t3-4R.jpg");
+                    Logger.Error(ex, listBox1.Text + " - No thumbnail found, using default thumbnail. ");
+                }
             }
-
             try
             {
                 using (StreamReader file = File.OpenText(textBox3.Text + @"\" + listBox1.Text + @"\info.dat"))
@@ -437,11 +494,26 @@ namespace BeatSaberTrackManagerSharp
                     var track_json = o2.ToString();
                     //var fdate = JObject.Parse(track_json)["title"];
 
+                    string trackFilename = textBox3.Text + @"\" + listBox1.Text + @"\" + (string)o2["_songFilename"];
+                    FileInfo f = new FileInfo(trackFilename);
+
+                    //Grab track's duration
+                    //Third times the charm, MediaToolkit grabs the track duration properly from uncommon extensions
+                    var inputFile = new MediaFile { Filename = trackFilename };
+
+                    using (var engine = new Engine())
+                    {
+                        engine.GetMetadata(inputFile);
+                    }
+
+                    Console.WriteLine(inputFile.Metadata.Duration);
+                    var dur = inputFile.Metadata.Duration;
+                    label3.Text = inputFile.Metadata.Duration.ToString(@"m\:ss");
+
                     textBox1.Text = (string)o2["_songName"] + "  " + (string)o2["_songAuthorName"];
 
                     textBox2.Text = track_json;
                     label4.Text = (string)o2["_songName"] + " - " + (string)o2["_levelAuthorName"];
-                    label3.Text = "Duration not yet calculated";
                     pictureBox2.Load(textBox3.Text + @"\" + listBox1.Text + @"\" + (string)o2["_coverImageFilename"]);
                 }
             }
@@ -571,7 +643,6 @@ namespace BeatSaberTrackManagerSharp
         {
             //Search Youtube
 
-
             //Use cmdline instead of NYoutubeDL
             //NYoutubeDL is confusing
             System.Diagnostics.Process dlVideo = new System.Diagnostics.Process();
@@ -595,23 +666,20 @@ namespace BeatSaberTrackManagerSharp
 
                 textBox2.Text = video_json;
                 label1.Text = (string)o2["title"];
-                label2.Text = (string)o2["duration"];
-                //var thumbnail_url = (string)o2["videos"][0]["thumbnailURL"];
-                //thumbnail_url = (string)o2["videos"][0]["thumbnailURL"];
-                //thumbnail_url = thumbnail_url.Substring(0, thumbnail_url.LastIndexOf("?"));
-                //pictureBox1.Load(thumbnail_url);
+
+                TimeSpan t = TimeSpan.FromSeconds((int)o2["duration"]);
+                string video_duration = t.ToString(@"m\:ss");
+                label2.Text = video_duration;
+
+                var thumbnail_url = (string)o2["thumbnail"];
+                thumbnail_url = thumbnail_url.Replace("_webp", "").Replace("webp", "jpg");
+                thumbnail_url = thumbnail_url.Substring(0, thumbnail_url.LastIndexOf("jpg") + 3);
+                pictureBox1.Load(thumbnail_url);
 
             }
 
             //Download
             //dlVideo.StartInfo.Arguments = "ytsearch:\"sensation vocaloid\" -f mp4[height<=720]+bestaudio[ext=m4a] -o \"J:/%(title)s.%(ext)s\" --no-playlist --write-info-json ";
-
-        }
-
-        static void OnProcessExit(object sender, EventArgs e)
-        {
-
-            //TODO add json file deletion
 
         }
 
