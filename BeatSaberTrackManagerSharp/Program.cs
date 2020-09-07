@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -12,7 +11,6 @@ using Newtonsoft.Json.Linq;
 using NLog;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.WindowsAPICodePack.Shell;
 using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
@@ -171,8 +169,8 @@ namespace BeatSaberTrackManagerSharpened
 
         public dynamic fetch_video_json(string track_path)
         {
-            var video_json = "";
-            JObject o2 = null;
+            string video_json;
+            JObject o2;
 
             if (File.Exists(track_path + @"\video.json"))
             {
@@ -231,22 +229,19 @@ namespace BeatSaberTrackManagerSharpened
                 {
                     label1.Text = "video.json empty or not in proper format!";
                     Logger.Error(ex, listView1.SelectedItems[0].Text + " - video.json empty or not in proper format!");
+                    //Professionally returning false as a string :)
                     return "false";
                 }
 
             }
             else
             {
+                //Professionally returning false as a string :)
                 return "false";
             }
 
         }
 
-
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-
-        }
 
         private void listView1_SelectedIndexChanged(object sender, EventArgs e)
         {
