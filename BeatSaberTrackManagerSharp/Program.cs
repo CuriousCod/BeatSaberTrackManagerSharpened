@@ -19,6 +19,7 @@ using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 using MediaToolkit.Model;
 using MediaToolkit;
 using System.Text.RegularExpressions;
+using System.Net;
 
 namespace BeatSaberTrackManagerSharpened
 {
@@ -933,10 +934,22 @@ namespace BeatSaberTrackManagerSharpened
         {
             //Search Youtube
 
+            string videoUrl;
             string BsMainFolder = Path.GetFullPath(Path.Combine(textBox3.Text, @"..\..\"));
             string trackFolder = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\";
             Console.WriteLine(trackFolder);
-            Console.WriteLine("ytsearch:\"" + textBox1.Text + "\" -o \"" + trackFolder + "\" --skip-download --write-info-json ");
+
+            //ytsearch is very finicky at the moment, so grab video url with WebClient instead
+            using (WebClient client = new WebClient()) 
+            {
+                string htmlCode = client.DownloadString("https://www.youtube.com/results?search_query=" + textBox1.Text.Replace(" ","+"));
+                Console.WriteLine(htmlCode);
+                var index = htmlCode.IndexOf("watch?");
+                Console.WriteLine(index);
+                var videoId = htmlCode.Substring(index + 8,11);
+                videoUrl = "https://www.youtube.com/watch?v=" + videoId;
+                Console.WriteLine(videoUrl);
+            }
 
             //Use cmdline instead of NYoutubeDL
             //NYoutubeDL is confusing
@@ -945,7 +958,8 @@ namespace BeatSaberTrackManagerSharpened
             
             //youtubeDl output template is weird
             dlVideo.StartInfo.Arguments =
-                "ytsearch:\"" + textBox1.Text + "\" -o \""+ trackFolder + "video\" --skip-download --write-info-json ";
+                //"ytsearch:\"" + textBox1.Text + "\" -o \""+ trackFolder + "video\" --skip-download --write-info-json";
+                videoUrl + " -o \""+ trackFolder + "video\" --skip-download --write-info-json --cookies F:/cookies.txt";
             //dlVideo.StartInfo.RedirectStandardOutput = true;
             //dlVideo.StartInfo.UseShellExecute = false;
             dlVideo.Start();
@@ -976,7 +990,6 @@ namespace BeatSaberTrackManagerSharpened
                 button4.Enabled = true;
 
             }
-
 
         }
 
@@ -1032,7 +1045,7 @@ namespace BeatSaberTrackManagerSharpened
                 
                 // TODO add exception handling when video quality is less than 480p
                 dlVideo.StartInfo.Arguments = video_url +
-                                              " -f mp4[height>=480][height<1080]+bestaudio[ext=m4a] -o \""+ trackFolder +"%(title)s.%(ext)s\" --no-playlist";
+                                              " -f mp4[height>=480][height<1080]+bestaudio[ext=m4a] -o \""+ trackFolder + "%(title)s.%(ext)s\" --no-playlist --cookies F:/cookies.txt";
                 dlVideo.Start();
                 dlVideo.WaitForExit();
                 
@@ -1040,6 +1053,7 @@ namespace BeatSaberTrackManagerSharpened
 
                 var video_duration = TimeSpan.FromSeconds(info["duration"]);
 
+                // TODO See 1a3f video.json generation
                 //Generate video json
                 Dictionary<string, dynamic> nestedDataSet = new Dictionary<string, dynamic>
                 {
