@@ -36,6 +36,7 @@ namespace BeatSaberTrackManagerSharpened
         private Label label6;
         private ListView listView1;
         private ColumnHeader columnHeader1;
+        private Button button5;
         private Label label7;
 
         private void InitializeComponent()
@@ -72,6 +73,7 @@ namespace BeatSaberTrackManagerSharpened
             this.listView1 = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.label7 = new System.Windows.Forms.Label();
+            this.button5 = new System.Windows.Forms.Button();
             this.contextMenuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
@@ -147,6 +149,7 @@ namespace BeatSaberTrackManagerSharpened
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(212, 550);
             this.textBox2.TabIndex = 4;
+            this.textBox2.Visible = false;
             // 
             // label1
             // 
@@ -236,6 +239,7 @@ namespace BeatSaberTrackManagerSharpened
             this.textBox3.Size = new System.Drawing.Size(392, 20);
             this.textBox3.TabIndex = 11;
             this.textBox3.Text = "F:\\Games\\Beat Saber 1.8.0\\Beat Saber_Data\\CustomLevels";
+            this.textBox3.Visible = false;
             // 
             // button2
             // 
@@ -249,6 +253,7 @@ namespace BeatSaberTrackManagerSharpened
             this.button2.TabIndex = 12;
             this.button2.Text = "Reset combo";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Visible = false;
             // 
             // menuStrip1
             // 
@@ -421,6 +426,21 @@ namespace BeatSaberTrackManagerSharpened
             this.label7.TabIndex = 22;
             this.label7.Text = "Filter";
             // 
+            // button5
+            // 
+            this.button5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.button5.Enabled = false;
+            this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button5.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.button5.Location = new System.Drawing.Point(223, 769);
+            this.button5.MinimumSize = new System.Drawing.Size(75, 23);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(79, 23);
+            this.button5.TabIndex = 23;
+            this.button5.Text = "Auto Offset";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
             // Form1
             // 
             this.AccessibleName = "Form1";
@@ -428,6 +448,7 @@ namespace BeatSaberTrackManagerSharpened
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(1226, 808);
+            this.Controls.Add(this.button5);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.label6);
@@ -465,6 +486,7 @@ namespace BeatSaberTrackManagerSharpened
         {
             InitializeComponent();
         }
+
 
     }
 }

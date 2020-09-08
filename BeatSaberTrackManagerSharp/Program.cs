@@ -1,42 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Reflection;
+using System.Windows.Forms;
+using MediaToolkit;
+using MediaToolkit.Model;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.WindowsAPICodePack.Shell;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System.Net;
-using System.Text;
-using Microsoft.WindowsAPICodePack.Shell;
-using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
-using MediaToolkit.Model;
-using MediaToolkit;
-using System.Text.RegularExpressions;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace BeatSaberTrackManagerSharpened
 {
     public partial class Form1 : Form
     {
         //Set some variables
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private JObject videoInfo;
+        public string trackFilename;
+        public string videoFilename;
 
         [STAThread]
-        static void Main()
+        private static void Main()
         {
-
-            Form1 a = new Form1();
+            var a = new Form1();
             a.fill_listbox();
 
             Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(a);
-
         }
 
         public void fill_listbox()
@@ -44,14 +43,11 @@ namespace BeatSaberTrackManagerSharpened
             // Listview creates an empty row in the beginning -> clear list first
             listView1.Items.Clear();
 
-            string[] subDirs = Directory.GetDirectories(textBox3.Text)
+            var subDirs = Directory.GetDirectories(textBox3.Text)
                 .Select(Path.GetFileName)
                 .ToArray();
 
-            foreach (string i in subDirs)
-            {
-                listView1.Items.Add(i);
-            }
+            foreach (var i in subDirs) listView1.Items.Add(i);
         }
 
         public void clear_info()
@@ -66,85 +62,59 @@ namespace BeatSaberTrackManagerSharpened
             pictureBox1.Image = null;
             pictureBox2.Image = null;
             button4.Enabled = false;
+            button5.Enabled = false;
         }
 
         public void updateListbox(string[] subDirs, bool filter)
-        // Filter results based on combobox value
+            // Filter results based on combobox value
         {
             switch (comboBox1.SelectedIndex)
             {
                 case 0:
                     if (filter)
                     {
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                            {
                                 listView1.Items.Add(i);
-                            }
-
-                        }
                     }
                     else
                     {
-                        foreach (string i in subDirs)
-                        {
-                            listView1.Items.Add(i);
-                        }
+                        foreach (var i in subDirs) listView1.Items.Add(i);
                     }
+
                     break;
                 case 1:
                     if (filter)
                     {
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                            {
                                 listView1.Items.Add(i);
-                            }
-
-                        }
                     }
                     else
                     {
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (File.Exists(textBox3.Text + @"\" + i + @"\video.json") == false)
-                            {
                                 if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                                {
                                     listView1.Items.Add(i);
-                                }
-                            }
-                        }
                     }
+
                     break;
                 case 2:
                     if (filter)
                     {
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                            {
                                 listView1.Items.Add(i);
-                            }
-
-                        }
                     }
                     else
                     {
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                            {
                                 listView1.Items.Add(i);
-                            }
-
-                        }
                     }
+
                     break;
             }
-
         }
 
         private string ReplaceSymbols(string filename)
@@ -152,80 +122,72 @@ namespace BeatSaberTrackManagerSharpened
             //Replace symbols that cannot be used in file names
             //Also replaces few symbols that youtubeDl replaces automatically 
 
-            List<string> ngSymbols = new List<string>() { "*", "/", "\\", "<", ">", "|" };
+            var ngSymbols = new List<string> {"*", "/", "\\", "<", ">", "|"};
 
-            foreach (string i in ngSymbols)
-            {
-                filename = filename.Replace(i, "_");
-            }
+            foreach (var i in ngSymbols) filename = filename.Replace(i, "_");
 
             filename = filename.Replace("?", "");
             filename = filename.Replace(":", " -");
             filename = filename.Replace("\"", "'");
 
             return filename;
-
         }
 
         public dynamic fetch_video_json(string track_path)
         {
             string video_json;
-            JObject o2;
+            JObject videoInfo;
 
             if (File.Exists(track_path + @"\video.json"))
-            {
                 try
                 {
-                    using (StreamReader file = File.OpenText(track_path + @"\video.json"))
-                    using (JsonTextReader reader = new JsonTextReader(file))
+                    using (var file = File.OpenText(track_path + @"\video.json"))
+                    using (var reader = new JsonTextReader(file))
                     {
-                        o2 = (JObject) JToken.ReadFrom(reader);
+                        videoInfo = (JObject) JToken.ReadFrom(reader);
 
-                        video_json = o2.ToString();
+                        video_json = videoInfo.ToString();
                         Console.WriteLine(video_json);
                     }
 
-                    if (o2["videos"] == null)
+                    if (videoInfo["videos"] == null)
                     {
-                        string newJson = "{activeVideo: '0', videos: [" + video_json + "]}";
-                        o2 = JObject.Parse(newJson);
-                        Console.WriteLine(o2.ToString());
+                        var newJson = "{activeVideo: '0', videos: [" + video_json + "]}";
+                        videoInfo = JObject.Parse(newJson);
+                        Console.WriteLine(videoInfo.ToString());
                     }
 
-                    int av = (int) o2["activeVideo"];
+                    var av = (int) videoInfo["activeVideo"];
 
-                    if (o2["videos"][av]["videopath"] != null)
+                    if (videoInfo["videos"][av]["videopath"] != null)
                     {
-                        o2["videos"][av]["videoPath"] = o2["videos"][av]["videopath"];
-                        o2["videos"][av]["videopath"].Remove();
+                        videoInfo["videos"][av]["videoPath"] = videoInfo["videos"][av]["videopath"];
+                        videoInfo["videos"][av]["videopath"].Remove();
                     }
-                    
+
                     //Replace unaccepted symbols in video file name
-                    o2["videos"][av]["videoPath"] = ReplaceSymbols(o2["videos"][av]["videoPath"].ToString());
+                    videoInfo["videos"][av]["videoPath"] = ReplaceSymbols(videoInfo["videos"][av]["videoPath"].ToString());
 
                     //Fix long video url
-                    if (o2["videos"][av]["URL"].ToString().Contains("youtube"))
-                    {
-                        o2["videos"][av]["URL"] = o2["videos"][av]["URL"].ToString().Substring(23);
-                    }
+                    if (videoInfo["videos"][av]["URL"].ToString().Contains("youtube"))
+                        videoInfo["videos"][av]["URL"] = videoInfo["videos"][av]["URL"].ToString().Substring(23);
 
                     //Fix thumbnail url
-                    if (o2["videos"][av]["thumbnailURL"].ToString().Contains("?"))
+                    if (videoInfo["videos"][av]["thumbnailURL"].ToString().Contains("?"))
                     {
-                        string thumbnailUrl = o2["videos"][av]["thumbnailURL"].ToString();
-                        thumbnailUrl = thumbnailUrl.Substring(0,thumbnailUrl.IndexOf("?"));
-                        o2["videos"][av]["thumbnailURL"] = thumbnailUrl;
+                        var thumbnailUrl = videoInfo["videos"][av]["thumbnailURL"].ToString();
+                        thumbnailUrl = thumbnailUrl.Substring(0, thumbnailUrl.IndexOf("?"));
+                        videoInfo["videos"][av]["thumbnailURL"] = thumbnailUrl;
                     }
 
-
-                    video_json = o2.ToString();
+                    video_json = videoInfo.ToString();
                     Console.WriteLine(video_json);
 
                     File.WriteAllText(track_path + @"\video.json", video_json);
 
                     return video_json;
                 }
-                catch (Newtonsoft.Json.JsonReaderException ex)
+                catch (JsonReaderException ex)
                 {
                     label1.Text = "video.json empty or not in proper format!";
                     Logger.Error(ex, listView1.SelectedItems[0].Text + " - video.json empty or not in proper format!");
@@ -233,13 +195,7 @@ namespace BeatSaberTrackManagerSharpened
                     return "false";
                 }
 
-            }
-            else
-            {
-                //Professionally returning false as a string :)
-                return "false";
-            }
-
+            return "false";
         }
 
 
@@ -253,29 +209,33 @@ namespace BeatSaberTrackManagerSharpened
                 var video_json = fetch_video_json(textBox3.Text + @"\" + listView1.SelectedItems[0].Text);
 
                 if (video_json != "false")
-                {
                     try
                     {
-                        JObject o2 = JObject.Parse(video_json);
-                        
+                        JObject videoInfo = JObject.Parse(video_json);
+
                         //Grab video data from video.json
-                        label1.Text = (string)o2["videos"][0]["title"];
-                        label2.Text = (string)o2["videos"][0]["duration"];
-                        var thumbnail_url = (string)o2["videos"][0]["thumbnailURL"];
+                        label1.Text = (string) videoInfo["videos"][0]["title"];
+                        label2.Text = (string) videoInfo["videos"][0]["duration"];
+                        var thumbnail_url = (string) videoInfo["videos"][0]["thumbnailURL"];
                         thumbnail_url = thumbnail_url.Replace("_webp", "").Replace("webp", "jpg");
                         pictureBox1.Load(thumbnail_url);
 
+                        //Video file name
+                        videoFilename = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" + (string)videoInfo["videos"][0]["videoPath"];
+
                         //Video size
-                        var videofile = new FileInfo(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" + (string)o2["videos"][0]["videoPath"]);
-                        long size = videofile.Length;
+                        var videofile = new FileInfo(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" +
+                                                     (string) videoInfo["videos"][0]["videoPath"]);
+                        var size = videofile.Length;
 
                         //Video height
-                        ShellFile shellFile = ShellFile.FromFilePath(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" + (string)o2["videos"][0]["videoPath"]);
-                        int videoWidth = (int)shellFile.Properties.System.Video.FrameHeight.Value;
+                        var shellFile = ShellFile.FromFilePath(textBox3.Text + @"\" + listView1.SelectedItems[0].Text +
+                                                               @"\" + (string) videoInfo["videos"][0]["videoPath"]);
+                        var videoWidth = (int) shellFile.Properties.System.Video.FrameHeight.Value;
 
                         label5.Text = "Video downloaded - " + size / 1000000 + " MB - " + videoWidth + "p";
-                        label6.Text = "Offset: " + (string)o2["videos"][0]["offset"];
-
+                        label6.Text = "Offset: " + (string) videoInfo["videos"][0]["offset"];
+                        button5.Enabled = true;
                     }
                     catch (FileNotFoundException ex)
                     {
@@ -288,7 +248,8 @@ namespace BeatSaberTrackManagerSharpened
                         //Actually don't, just use the jpg image instead
                         //C# and webp don't blend well
                         //TODO Get rid of this part
-                        Logger.Error(ex, listView1.SelectedItems[0].Text + " - Thumbnail format not supported -> webp? ");
+                        Logger.Error(ex,
+                            listView1.SelectedItems[0].Text + " - Thumbnail format not supported -> webp? ");
                     }
 
                     catch (DirectoryNotFoundException ex)
@@ -296,29 +257,31 @@ namespace BeatSaberTrackManagerSharpened
                         Logger.Error(ex, textBox3.Text + " - Not the BS directory ");
                     }
 
-                    catch (System.Net.WebException ex)
+                    catch (WebException ex)
                     {
                         pictureBox1.Load("https://s.ytimg.com/yts/img/no_thumbnail-vfl4t3-4R.jpg");
-                        Logger.Error(ex, listView1.SelectedItems[0].Text + " - No thumbnail found, using default thumbnail. ");
+                        Logger.Error(ex,
+                            listView1.SelectedItems[0].Text + " - No thumbnail found, using default thumbnail. ");
                     }
-                }
 
                 try
                 {
                     // Grab track information from info.dat
-                    using (StreamReader file = File.OpenText(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\info.dat"))
-                    using (JsonTextReader reader = new JsonTextReader(file))
+                    using (var file =
+                        File.OpenText(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\info.dat"))
+                    using (var reader = new JsonTextReader(file))
                     {
-                        JObject o2 = (JObject)JToken.ReadFrom(reader);
+                        var trackInfo = (JObject) JToken.ReadFrom(reader);
 
-                        var track_json = o2.ToString();
+                        var track_json = trackInfo.ToString();
 
-                        string trackFilename = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" + (string)o2["_songFilename"];
-                        FileInfo f = new FileInfo(trackFilename);
+                        trackFilename = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" +
+                                            (string) trackInfo["_songFilename"];
+                        var f = new FileInfo(trackFilename);
 
                         //Grab track's duration
-                        //Third times the charm, MediaToolkit grabs the track duration properly (unlike some other <_<) from uncommon extensions
-                        var inputFile = new MediaFile { Filename = trackFilename };
+                        //Third times the charm, MediaToolkit grabs the track duration properly (unlike some other ones <_<) from uncommon extensions
+                        var inputFile = new MediaFile {Filename = trackFilename};
 
                         using (var engine = new Engine())
                         {
@@ -329,33 +292,36 @@ namespace BeatSaberTrackManagerSharpened
                         var dur = inputFile.Metadata.Duration;
                         label3.Text = inputFile.Metadata.Duration.ToString(@"m\:ss");
 
-                        textBox1.Text = (string)o2["_songName"] + " " + (string)o2["_songAuthorName"];
+                        textBox1.Text = (string) trackInfo["_songName"] + " " + (string) trackInfo["_songAuthorName"];
 
                         textBox2.Text = track_json;
-                        label4.Text = (string)o2["_songName"] + " - " + (string)o2["_levelAuthorName"];
-                        pictureBox2.Load(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" + (string)o2["_coverImageFilename"]);
+                        label4.Text = (string) trackInfo["_songName"] + " - " + (string) trackInfo["_levelAuthorName"];
+                        pictureBox2.Load(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" +
+                                         (string) trackInfo["_coverImageFilename"]);
                     }
                 }
                 catch (FileNotFoundException ex)
                 {
                     Logger.Error(ex);
                     label4.Text = "info.dat missing!";
-                    textBox1.Text = listView1.SelectedItems[0].Text.Substring(listView1.SelectedItems[0].Text.IndexOf("(") + 1);
+                    textBox1.Text = listView1.SelectedItems[0].Text
+                        .Substring(listView1.SelectedItems[0].Text.IndexOf("(") + 1);
+                    button5.Enabled = false;
                 }
 
                 catch (DirectoryNotFoundException ex)
                 {
                     Logger.Error(ex, listView1.SelectedItems[0].Text + " - Not the BS directory");
                 }
-                catch (Newtonsoft.Json.JsonReaderException ex)
+                catch (JsonReaderException ex)
                 {
                     label4.Text = "info.dat empty or not in proper format!";
                     Logger.Error(ex, listView1.SelectedItems[0].Text + " - info.dat empty or not in proper format!");
-                    textBox1.Text = listView1.SelectedItems[0].Text.Substring(listView1.SelectedItems[0].Text.IndexOf("(") + 1);
+                    textBox1.Text = listView1.SelectedItems[0].Text
+                        .Substring(listView1.SelectedItems[0].Text.IndexOf("(") + 1);
+                    button5.Enabled = false;
                 }
             }
-
-            
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -363,7 +329,7 @@ namespace BeatSaberTrackManagerSharpened
             try
             {
                 //FIXED Making this dynamic causes issues -> Set combobox default name as the 0 index
-                string[] subDirs = Directory.GetDirectories(textBox3.Text)
+                var subDirs = Directory.GetDirectories(textBox3.Text)
                     .Select(Path.GetFileName)
                     .ToArray();
 
@@ -374,42 +340,27 @@ namespace BeatSaberTrackManagerSharpened
                 switch (comboBox1.SelectedIndex)
                 {
                     case 0:
-                        foreach (string i in subDirs)
-                        {
-                            listView1.Items.Add(i);
-                        }
+                        foreach (var i in subDirs) listView1.Items.Add(i);
                         break;
 
                     case 1:
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (File.Exists(textBox3.Text + @"\" + i + @"\video.json") == false)
-                            {
-
                                 listView1.Items.Add(i);
-                            }
-                        }
                         break;
 
                     case 2:
-                        foreach (string i in subDirs)
-                        {
+                        foreach (var i in subDirs)
                             if (File.Exists(textBox3.Text + @"\" + i + @"\video.json"))
-                            {
-
                                 listView1.Items.Add(i);
-                            }
-                        }
                         break;
                 }
-
             }
-            catch (System.ArgumentException)
+            catch (ArgumentException)
             {
                 listView1.Items.Clear();
                 comboBox1.Enabled = false;
             }
-
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -418,20 +369,18 @@ namespace BeatSaberTrackManagerSharpened
             {
                 //TODO Doesn't work, if video is not downloaded
                 string videoUrl = fetch_video_json(textBox3.Text + @"\" + listView1.SelectedItems[0].Text);
-                JObject o = JObject.Parse(videoUrl);
+                var o = JObject.Parse(videoUrl);
 
                 //TODO change 0 to av
-                videoUrl = "www.youtube.com" + o["videos"][0]["URL"].ToString();
-                System.Diagnostics.Process.Start(videoUrl);
+                videoUrl = "www.youtube.com" + o["videos"][0]["URL"];
+                Process.Start(videoUrl);
             }
-
         }
 
         private void toolStripMenuItem4_Click(object sender, EventArgs e)
         {
-
             //Replaced the horrible FolderBrowser with CommonOpenFile
-            CommonOpenFileDialog openBSFolder = new CommonOpenFileDialog();
+            var openBSFolder = new CommonOpenFileDialog();
             openBSFolder.InitialDirectory = textBox3.Text;
             openBSFolder.IsFolderPicker = true;
 
@@ -439,9 +388,8 @@ namespace BeatSaberTrackManagerSharpened
             {
                 textBox3.Text = openBSFolder.FileName;
                 clear_info();
-                fill_listbox();  //TODO Not working properly, list stays full even with wrong folder selected
+                fill_listbox(); //TODO Not working properly, list stays full even with wrong folder selected
             }
-
         }
 
         private void toolStripMenuItem5_Click(object sender, EventArgs e)
@@ -450,43 +398,41 @@ namespace BeatSaberTrackManagerSharpened
         }
 
 
-
         private void toolStripMenuItem2_Click(object sender, EventArgs e)
         {
             //Open track folder
-            System.Diagnostics.Process.Start("explorer.exe", textBox3.Text + @"\" + listView1.SelectedItems[0].Text);
-
-
+            Process.Start("explorer.exe", textBox3.Text + @"\" + listView1.SelectedItems[0].Text);
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             //Search Youtube
-
             string videoUrl;
-            string BsMainFolder = Path.GetFullPath(Path.Combine(textBox3.Text, @"..\..\"));
-            string trackFolder = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\";
+            var BsMainFolder = Path.GetFullPath(Path.Combine(textBox3.Text, @"..\..\"));
+            var trackFolder = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\";
             Console.WriteLine(trackFolder);
 
-            //ytsearch is very finicky at the moment, so grab video url with WebClient instead
-            using (WebClient client = new WebClient()) 
+            //ytsearch is very finicky at the moment, so grab the video url with WebClient instead
+            using (var client = new WebClient())
             {
-                string htmlCode = client.DownloadString("https://www.youtube.com/results?search_query=" + textBox1.Text.Replace(" ","+"));
+                var htmlCode = client.DownloadString("https://www.youtube.com/results?search_query=" +
+                                                     textBox1.Text.Replace(" ", "+"));
                 var index = htmlCode.IndexOf("watch?");
-                var videoId = htmlCode.Substring(index + 8,11);
+                var videoId = htmlCode.Substring(index + 8, 11);
                 videoUrl = "https://www.youtube.com/watch?v=" + videoId;
                 Console.WriteLine(videoUrl);
             }
 
             //Use cmdline instead of NYoutubeDL
             //NYoutubeDL is confusing
-            System.Diagnostics.Process dlVideo = new System.Diagnostics.Process();
+            var dlVideo = new Process();
             dlVideo.StartInfo.FileName = BsMainFolder + @"\Youtube-dl\youtube-dl.exe";
-            
+
             //youtubeDl output template is weird
             dlVideo.StartInfo.Arguments =
                 //"ytsearch:\"" + textBox1.Text + "\" -o \""+ trackFolder + "video\" --skip-download --write-info-json";
-                videoUrl + " -o \""+ trackFolder + "video\" --skip-download --write-info-json --cookies F:/cookies.txt";
+                videoUrl + " -o \"" + trackFolder +
+                "video\" --skip-download --write-info-json --cookies F:/cookies.txt";
             //dlVideo.StartInfo.RedirectStandardOutput = true;
             //dlVideo.StartInfo.UseShellExecute = false;
             dlVideo.Start();
@@ -494,18 +440,18 @@ namespace BeatSaberTrackManagerSharpened
             dlVideo.WaitForExit();
             //MessageBox.Show(stdout);
 
-            using (StreamReader file = File.OpenText(trackFolder + @"video.info.json"))
-            using (JsonTextReader reader = new JsonTextReader(file))
+            using (var file = File.OpenText(trackFolder + @"video.info.json"))
+            using (var reader = new JsonTextReader(file))
             {
-                 videoInfo = (JObject) JToken.ReadFrom(reader);
+                videoInfo = (JObject) JToken.ReadFrom(reader);
 
                 var video_json = videoInfo.ToString();
 
                 textBox2.Text = video_json;
                 label1.Text = (string) videoInfo["title"];
 
-                TimeSpan t = TimeSpan.FromSeconds((int) videoInfo["duration"]);
-                string video_duration = t.ToString(@"m\:ss");
+                var t = TimeSpan.FromSeconds((int) videoInfo["duration"]);
+                var video_duration = t.ToString(@"m\:ss");
                 label2.Text = video_duration;
 
                 var thumbnail_url = (string) videoInfo["thumbnail"];
@@ -515,15 +461,14 @@ namespace BeatSaberTrackManagerSharpened
                 thumbnail_url = thumbnail_url.Substring(0, thumbnail_url.LastIndexOf("jpg") + 3);
                 pictureBox1.Load(thumbnail_url);
                 button4.Enabled = true;
-
             }
-            File.Delete(trackFolder + @"video.info.json");
 
+            File.Delete(trackFolder + @"video.info.json");
         }
 
         private void textBox4_TextChanged(object sender, EventArgs e)
         {
-            string[] subDirs = Directory.GetDirectories(textBox3.Text)
+            var subDirs = Directory.GetDirectories(textBox3.Text)
                 .Select(Path.GetFileName)
                 .ToArray();
 
@@ -532,15 +477,9 @@ namespace BeatSaberTrackManagerSharpened
                 listView1.Items.Clear();
                 clear_info();
 
-                foreach (string i in subDirs)
-                {
+                foreach (var i in subDirs)
                     if (i.ToLower().Contains(textBox4.Text.ToLower()))
-                    {
                         listView1.Items.Add(i);
-                    }
-
-                }
-
             }
 
             if (textBox4.Text.Length < 2)
@@ -549,34 +488,33 @@ namespace BeatSaberTrackManagerSharpened
                 //clear_info();
                 updateListbox(subDirs, false);
             }
-
-
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
             //Download
-            string trackFolder = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\";
+            var trackFolder = textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\";
             var video_url = (string) videoInfo["webpage_url"];
 
-            string BsMainFolder = Path.GetFullPath(Path.Combine(textBox3.Text, @"..\..\"));
+            var BsMainFolder = Path.GetFullPath(Path.Combine(textBox3.Text, @"..\..\"));
 
-            System.Diagnostics.Process dlVideo = new System.Diagnostics.Process();
+            var dlVideo = new Process();
             dlVideo.StartInfo.FileName = BsMainFolder + @"\Youtube-dl\youtube-dl.exe";
-            
+
             // TODO add exception handling when video quality is less than 480p
             dlVideo.StartInfo.Arguments = video_url +
-                                          " -f mp4[height>=480][height<1080]+bestaudio[ext=m4a] -o \""+ trackFolder + "%(title)s.%(ext)s\" --no-playlist --cookies F:/cookies.txt";
+                                          " -f mp4[height>=480][height<1080]+bestaudio[ext=m4a] -o \"" + trackFolder +
+                                          "%(title)s.%(ext)s\" --no-playlist --cookies F:/cookies.txt";
             dlVideo.Start();
             dlVideo.WaitForExit();
-            
+
             var info = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(videoInfo.ToString());
 
             var video_duration = TimeSpan.FromSeconds(info["duration"]);
 
             // TODO See 1a3f video.json generation
             //Generate video json
-            Dictionary<string, dynamic> nestedDataSet = new Dictionary<string, dynamic>
+            var nestedDataSet = new Dictionary<string, dynamic>
             {
                 {"title", info["title"]},
                 {"author", info["uploader"]},
@@ -587,28 +525,106 @@ namespace BeatSaberTrackManagerSharpened
                 {"loop", "false"},
                 {"offset", 0},
                 {"videoPath", ReplaceSymbols(info["title"] + ".mp4")}
-
             };
-           
-            List<dynamic> videos = new List<dynamic>();
+
+            var videos = new List<dynamic>();
             videos.Add(nestedDataSet);
 
-            Dictionary<string, dynamic> dataSet = new Dictionary<string, dynamic>
+            var dataSet = new Dictionary<string, dynamic>
             {
                 {"activeVideo", 0}, // DONE this is added as a string for some reason -> False alarm I guess
                 {"videos", videos},
                 {"Count", 1} // DONE See if this is actually added to the json -> Seems good
             };
 
-            string videoJson = JsonConvert.SerializeObject(dataSet, Formatting.Indented);
+            var videoJson = JsonConvert.SerializeObject(dataSet, Formatting.Indented);
             File.WriteAllText(trackFolder + @"video.json", videoJson.Replace("\"[", "[").Replace("]\"", "]"));
             Console.WriteLine(videoJson);
         }
+        private void button5_Click(object sender, System.EventArgs e)
+        {
 
+            //TODO Aubio won't accept the audio format
+
+            //https://markheath.net/post/naudio-play-extract
+            var file = new NAudio.Vorbis.VorbisWaveReader(trackFilename);
+            var trimmed = new OffsetSampleProvider(file);
+            //trimmed.SkipOver = TimeSpan.FromSeconds(15);
+            trimmed.Take = TimeSpan.FromSeconds(10);
+
+            //var player = new WaveOutEvent();
+            //player.Init(trimmed);
+            //player.Play();
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"aubio\bin\");
+            WaveFileWriter.CreateWaveFile16(path + "track.wav", trimmed);
+
+
+            file.Close();
+
+            try
+            {
+                using (var reader = new MediaFoundationReader(videoFilename))
+                {
+                    trimmed = new OffsetSampleProvider(reader.ToSampleProvider());
+                    trimmed.Take = TimeSpan.FromSeconds(10);
+
+                    WaveFileWriter.CreateWaveFile16(path + "video.wav", trimmed);
+
+                }
+
+                var aubioTrack = new Process();
+                aubioTrack.StartInfo.FileName = path + "aubioonset.exe";
+
+                aubioTrack.StartInfo.Arguments = "-T ms " + path + "track.wav";
+                aubioTrack.StartInfo.RedirectStandardOutput = true;
+                aubioTrack.StartInfo.UseShellExecute = false;
+
+                List<string> trackOnsetValues = new List<string>();
+
+                aubioTrack.Start();
+
+                while (!aubioTrack.StandardOutput.EndOfStream)
+                {
+                    trackOnsetValues.Add(aubioTrack.StandardOutput.ReadLine());
+                }
+
+                Console.WriteLine(trackOnsetValues[0]);
+                aubioTrack.WaitForExit();
+
+                var aubioVideo = new Process();
+                aubioVideo.StartInfo.FileName = path + "aubioonset.exe";
+
+                aubioVideo.StartInfo.Arguments = "-T ms " + path + "video.wav";
+                aubioVideo.StartInfo.RedirectStandardOutput = true;
+                aubioVideo.StartInfo.UseShellExecute = false;
+
+                List<string> videoOnsetValues = new List<string>();
+
+                aubioVideo.Start();
+
+                while (!aubioVideo.StandardOutput.EndOfStream)
+                {
+                    videoOnsetValues.Add(aubioVideo.StandardOutput.ReadLine());
+                }
+
+                Console.WriteLine(videoOnsetValues[0]);
+                aubioVideo.WaitForExit();
+
+                var trackOnset = int.Parse(trackOnsetValues[0].Substring(0, trackOnsetValues[0].IndexOf(".")));
+                var videoOnset = int.Parse(videoOnsetValues[0].Substring(0, videoOnsetValues[0].IndexOf(".")));
+
+                var offset = videoOnset - trackOnset;
+                Console.WriteLine(offset);
+            }
+            catch (System.Runtime.InteropServices.COMException ex)
+            {
+                Console.WriteLine("Video has no audio track!");
+                label6.Text = "Video has no audio track";
+            }
+
+            File.Delete(path + "track.wav");
+            File.Delete(path + "video.wav");
+
+        }
     }
-
-
 }
-
-
-
