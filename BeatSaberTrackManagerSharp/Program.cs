@@ -19,6 +19,7 @@ using NAudio.Wave.SampleProviders;
 
 //TODO turn ["videos"][0] to ["videos"][av]
 //TODO See 1a3f video.json generation
+//TODO Dynamic BS path
 //DONE Aubio won't accept the audio format -> Use the ffmpeg version
 
 namespace BeatSaberTrackManagerSharpened
@@ -298,7 +299,6 @@ namespace BeatSaberTrackManagerSharpened
 
                         textBox1.Text = (string) trackInfo["_songName"] + " " + (string) trackInfo["_songAuthorName"];
 
-                        textBox2.Text = track_json;
                         label4.Text = (string) trackInfo["_songName"] + " - " + (string) trackInfo["_levelAuthorName"];
                         pictureBox2.Load(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\" +
                                          (string) trackInfo["_coverImageFilename"]);
@@ -450,7 +450,6 @@ namespace BeatSaberTrackManagerSharpened
 
                 var video_json = videoInfo.ToString();
 
-                textBox2.Text = video_json;
                 label1.Text = (string) videoInfo["title"];
 
                 var t = TimeSpan.FromSeconds((int) videoInfo["duration"]);

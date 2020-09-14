@@ -1,5 +1,6 @@
 ﻿using System.Windows.Forms;
 using System.ComponentModel;
+using System.Drawing;
 
 namespace BeatSaberTrackManagerSharpened
 {
@@ -7,7 +8,6 @@ namespace BeatSaberTrackManagerSharpened
     {
         public Button button1;
         private ComboBox comboBox1;
-        private TextBox textBox2;
         private Label label1;
         private Label label2;
         private PictureBox pictureBox1;
@@ -15,7 +15,6 @@ namespace BeatSaberTrackManagerSharpened
         private Label label3;
         private Label label4;
         private TextBox textBox3;
-        private Button button2;
         private MenuStrip menuStrip1;
         private ContextMenuStrip contextMenuStrip1;
         private IContainer components;
@@ -48,7 +47,6 @@ namespace BeatSaberTrackManagerSharpened
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.textBox2 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
@@ -56,7 +54,6 @@ namespace BeatSaberTrackManagerSharpened
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.textBox3 = new System.Windows.Forms.TextBox();
-            this.button2 = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
@@ -136,21 +133,6 @@ namespace BeatSaberTrackManagerSharpened
             this.comboBox1.Text = "All tracks";
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
-            // textBox2
-            // 
-            this.textBox2.AcceptsReturn = true;
-            this.textBox2.AcceptsTab = true;
-            this.textBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox2.BackColor = System.Drawing.Color.Teal;
-            this.textBox2.ForeColor = System.Drawing.Color.White;
-            this.textBox2.Location = new System.Drawing.Point(970, 60);
-            this.textBox2.MinimumSize = new System.Drawing.Size(212, 550);
-            this.textBox2.Multiline = true;
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(212, 550);
-            this.textBox2.TabIndex = 4;
-            this.textBox2.Visible = false;
-            // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -163,6 +145,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label1.Size = new System.Drawing.Size(237, 35);
             this.label1.TabIndex = 5;
             this.label1.Text = "AAA";
+            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // label2
             // 
@@ -176,6 +159,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label2.Size = new System.Drawing.Size(237, 35);
             this.label2.TabIndex = 6;
             this.label2.Text = "AAA";
+            this.label2.Click += new System.EventHandler(this.label2_Click);
             // 
             // pictureBox1
             // 
@@ -197,6 +181,7 @@ namespace BeatSaberTrackManagerSharpened
             this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox2.TabIndex = 10;
             this.pictureBox2.TabStop = false;
+            this.pictureBox2.Click += new System.EventHandler(this.pictureBox2_Click);
             // 
             // label3
             // 
@@ -210,6 +195,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label3.Size = new System.Drawing.Size(237, 35);
             this.label3.TabIndex = 9;
             this.label3.Text = "AAA";
+            this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // label4
             // 
@@ -223,16 +209,18 @@ namespace BeatSaberTrackManagerSharpened
             this.label4.Size = new System.Drawing.Size(237, 35);
             this.label4.TabIndex = 8;
             this.label4.Text = "AAA";
+            this.label4.Click += new System.EventHandler(this.label4_Click);
             // 
             // textBox3
             // 
             this.textBox3.AcceptsReturn = true;
             this.textBox3.AcceptsTab = true;
-            this.textBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.textBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox3.BackColor = System.Drawing.Color.Teal;
             this.textBox3.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.textBox3.ForeColor = System.Drawing.Color.White;
-            this.textBox3.Location = new System.Drawing.Point(790, 726);
+            this.textBox3.Location = new System.Drawing.Point(328, 768);
             this.textBox3.MinimumSize = new System.Drawing.Size(392, 20);
             this.textBox3.Multiline = true;
             this.textBox3.Name = "textBox3";
@@ -240,20 +228,6 @@ namespace BeatSaberTrackManagerSharpened
             this.textBox3.TabIndex = 11;
             this.textBox3.Text = "F:\\Games\\Beat Saber 1.8.0\\Beat Saber_Data\\CustomLevels";
             this.textBox3.Visible = false;
-            // 
-            // button2
-            // 
-            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button2.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.button2.Location = new System.Drawing.Point(1107, 767);
-            this.button2.MinimumSize = new System.Drawing.Size(75, 23);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 12;
-            this.button2.Text = "Reset combo";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Visible = false;
             // 
             // menuStrip1
             // 
@@ -263,7 +237,7 @@ namespace BeatSaberTrackManagerSharpened
             this.aboutToolStripMenuItem1});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1226, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(986, 24);
             this.menuStrip1.TabIndex = 13;
             // 
             // toolStripMenuItem3
@@ -371,6 +345,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label5.Size = new System.Drawing.Size(237, 17);
             this.label5.TabIndex = 17;
             this.label5.Text = "AAA";
+            this.label5.Click += new System.EventHandler(this.label5_Click);
             // 
             // label6
             // 
@@ -384,6 +359,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label6.Size = new System.Drawing.Size(237, 14);
             this.label6.TabIndex = 18;
             this.label6.Text = "AAA";
+            this.label6.Click += new System.EventHandler(this.label6_Click);
             // 
             // listView1
             // 
@@ -425,6 +401,7 @@ namespace BeatSaberTrackManagerSharpened
             this.label7.Size = new System.Drawing.Size(33, 19);
             this.label7.TabIndex = 22;
             this.label7.Text = "Filter";
+            this.label7.Click += new System.EventHandler(this.label7_Click);
             // 
             // button5
             // 
@@ -447,7 +424,7 @@ namespace BeatSaberTrackManagerSharpened
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.ClientSize = new System.Drawing.Size(1226, 808);
+            this.ClientSize = new System.Drawing.Size(986, 808);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.listView1);
@@ -456,7 +433,6 @@ namespace BeatSaberTrackManagerSharpened
             this.Controls.Add(this.button4);
             this.Controls.Add(this.textBox4);
             this.Controls.Add(this.button3);
-            this.Controls.Add(this.button2);
             this.Controls.Add(this.textBox3);
             this.Controls.Add(this.pictureBox2);
             this.Controls.Add(this.label3);
@@ -464,7 +440,6 @@ namespace BeatSaberTrackManagerSharpened
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.menuStrip1);
@@ -473,6 +448,7 @@ namespace BeatSaberTrackManagerSharpened
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
             this.Text = "Beat Saber Track Manager Sharpened";
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.contextMenuStrip1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
@@ -487,6 +463,50 @@ namespace BeatSaberTrackManagerSharpened
             InitializeComponent();
         }
 
+        private void label3_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label4_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void Form1_Load(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label7_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void pictureBox2_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, System.EventArgs e)
+        {
+
+        }
+
+        private void label6_Click(object sender, System.EventArgs e)
+        {
+
+        }
 
     }
 }
