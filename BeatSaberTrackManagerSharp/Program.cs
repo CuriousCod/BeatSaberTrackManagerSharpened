@@ -17,6 +17,10 @@ using NLog;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
+//TODO turn ["videos"][0] to ["videos"][av]
+//TODO See 1a3f video.json generation
+//DONE Aubio won't accept the audio format -> Use the ffmpeg version
+
 namespace BeatSaberTrackManagerSharpened
 {
     public partial class Form1 : Form
@@ -336,7 +340,6 @@ namespace BeatSaberTrackManagerSharpened
                 listView1.Items.Clear();
                 clear_info();
 
-                //TODO switch (comboBox1.SelectedIndex) - doesn't work
                 switch (comboBox1.SelectedIndex)
                 {
                     case 0:
@@ -512,7 +515,6 @@ namespace BeatSaberTrackManagerSharpened
 
             var video_duration = TimeSpan.FromSeconds(info["duration"]);
 
-            // TODO See 1a3f video.json generation
             //Generate video json
             var nestedDataSet = new Dictionary<string, dynamic>
             {
@@ -543,34 +545,35 @@ namespace BeatSaberTrackManagerSharpened
         }
         private void button5_Click(object sender, System.EventArgs e)
         {
+            //Auto offset
 
-            //TODO Aubio won't accept the audio format
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"aubio\bin\");
 
             //https://markheath.net/post/naudio-play-extract
-            var file = new NAudio.Vorbis.VorbisWaveReader(trackFilename);
-            var trimmed = new OffsetSampleProvider(file);
-            //trimmed.SkipOver = TimeSpan.FromSeconds(15);
-            trimmed.Take = TimeSpan.FromSeconds(10);
+            using (var file = new NAudio.Vorbis.VorbisWaveReader(trackFilename))
+            {
+                var trimmed = new OffsetSampleProvider(file);
+                //trimmed.SkipOver = TimeSpan.FromSeconds(15);
+                trimmed.Take = TimeSpan.FromSeconds(10);
 
-            //var player = new WaveOutEvent();
-            //player.Init(trimmed);
-            //player.Play();
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"aubio\bin\");
-            WaveFileWriter.CreateWaveFile16(path + "track.wav", trimmed);
-
-
-            file.Close();
+                //var player = new WaveOutEvent();
+                //player.Init(trimmed);
+                //player.Play();
+                WaveFileWriter.CreateWaveFile16(path + "track.wav", trimmed);
+            }
 
             try
             {
                 using (var reader = new MediaFoundationReader(videoFilename))
                 {
-                    trimmed = new OffsetSampleProvider(reader.ToSampleProvider());
+                    var trimmed = new OffsetSampleProvider(reader.ToSampleProvider());
                     trimmed.Take = TimeSpan.FromSeconds(10);
 
                     WaveFileWriter.CreateWaveFile16(path + "video.wav", trimmed);
 
                 }
+
+                //First process
 
                 var aubioTrack = new Process();
                 aubioTrack.StartInfo.FileName = path + "aubioonset.exe";
@@ -590,6 +593,8 @@ namespace BeatSaberTrackManagerSharpened
 
                 Console.WriteLine(trackOnsetValues[0]);
                 aubioTrack.WaitForExit();
+
+                //Second process
 
                 var aubioVideo = new Process();
                 aubioVideo.StartInfo.FileName = path + "aubioonset.exe";
@@ -620,6 +625,7 @@ namespace BeatSaberTrackManagerSharpened
             {
                 Console.WriteLine("Video has no audio track!");
                 label6.Text = "Video has no audio track";
+                Logger.Error(ex + listView1.SelectedItems[0].Text + " - Video has no audio track");
             }
 
             File.Delete(path + "track.wav");
