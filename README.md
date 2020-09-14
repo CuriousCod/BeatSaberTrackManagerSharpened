@@ -5,4 +5,4 @@ Most of the functions are now available:
 - List tracks
 - Display track information
 - Search and download
-- Auto offset (requires Aubio, filepath is fixed atm)
+- Auto offset (Does the calculation, but doesn't update video.json yet)
