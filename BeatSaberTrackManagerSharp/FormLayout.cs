@@ -226,7 +226,6 @@ namespace BeatSaberTrackManagerSharpened
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(392, 20);
             this.textBox3.TabIndex = 11;
-            this.textBox3.Text = "F:\\Games\\Beat Saber 1.8.0\\Beat Saber_Data\\CustomLevels";
             this.textBox3.Visible = false;
             // 
             // menuStrip1

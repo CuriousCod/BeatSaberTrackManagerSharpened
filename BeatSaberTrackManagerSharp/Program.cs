@@ -18,8 +18,8 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 //TODO turn ["videos"][0] to ["videos"][av]
-//TODO See 1a3f video.json generation
-//TODO Dynamic BS path
+//TODO See 1a3f video.json generation, also 853e
+//DONE Dynamic BS path
 //DONE Aubio won't accept the audio format -> Use the ffmpeg version
 
 namespace BeatSaberTrackManagerSharpened
@@ -36,6 +36,24 @@ namespace BeatSaberTrackManagerSharpened
         private static void Main()
         {
             var a = new Form1();
+
+            //Check config.ini for CustomLevels folder location
+            if (File.Exists(Environment.CurrentDirectory + @"\config.ini"))
+            {
+                if (Directory.Exists(File.ReadAllText(Environment.CurrentDirectory + @"\config.ini")))
+                {
+                    a.textBox3.Text = File.ReadAllText(Environment.CurrentDirectory + @"\config.ini");
+                }
+                else
+                {
+                    a.textBox3.Text = @"C:\";
+                }
+            }
+            else
+            {
+                a.textBox3.Text = @"C:\";
+            }
+
             a.fill_listbox();
 
             Application.EnableVisualStyles();
@@ -48,11 +66,16 @@ namespace BeatSaberTrackManagerSharpened
             // Listview creates an empty row in the beginning -> clear list first
             listView1.Items.Clear();
 
-            var subDirs = Directory.GetDirectories(textBox3.Text)
-                .Select(Path.GetFileName)
-                .ToArray();
+            if (textBox3.Text.Contains("CustomLevels"))
+            {
+                var subDirs = Directory.GetDirectories(textBox3.Text)
+                    .Select(Path.GetFileName)
+                    .ToArray();
 
-            foreach (var i in subDirs) listView1.Items.Add(i);
+                foreach (var i in subDirs) listView1.Items.Add(i);
+
+            }
+
         }
 
         public void clear_info()
@@ -382,16 +405,30 @@ namespace BeatSaberTrackManagerSharpened
 
         private void toolStripMenuItem4_Click(object sender, EventArgs e)
         {
-            //Replaced the horrible FolderBrowser with CommonOpenFile
+            //Replace the horrible FolderBrowser with CommonOpenFile
             var openBSFolder = new CommonOpenFileDialog();
             openBSFolder.InitialDirectory = textBox3.Text;
             openBSFolder.IsFolderPicker = true;
 
             if (openBSFolder.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                textBox3.Text = openBSFolder.FileName;
-                clear_info();
-                fill_listbox(); //TODO Not working properly, list stays full even with wrong folder selected
+                if (openBSFolder.FileName.Contains("CustomLevels"))
+                {
+                    Console.WriteLine(Directory.GetCurrentDirectory());
+                    textBox3.Text = openBSFolder.FileName;
+                    clear_info();
+                    fill_listbox();
+
+                    File.WriteAllText(Environment.CurrentDirectory + @"\config.ini", textBox3.Text);
+                }
+                else
+                {
+                    Console.WriteLine("Not the CustomLevels Folder!");
+                    clear_info();
+                    listView1.Items.Clear();
+                }
+
+
             }
         }
 
@@ -619,6 +656,25 @@ namespace BeatSaberTrackManagerSharpened
 
                 var offset = videoOnset - trackOnset;
                 Console.WriteLine(offset);
+
+                string videoJson;
+
+                //Update video.json
+                using (var file = File.OpenText(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\video.json"))
+                using (var reader = new JsonTextReader(file))
+                {
+                    videoInfo = (JObject)JToken.ReadFrom(reader);
+
+                    var av = (int)videoInfo["activeVideo"];
+                    videoInfo["videos"][av]["offset"] = offset;
+
+                    videoJson = videoInfo.ToString();
+
+                }
+
+                File.WriteAllText(textBox3.Text + @"\" + listView1.SelectedItems[0].Text + @"\video.json", videoJson);
+                label6.Text = "Offset: " + offset;
+
             }
             catch (System.Runtime.InteropServices.COMException ex)
             {
